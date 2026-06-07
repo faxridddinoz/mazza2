@@ -59,14 +59,14 @@ python bot.py
 ---
 
 ## Kuryer uchun
-**Kuryer panelga kirish:** `/courier`
+# **Kuryer panelga kirish:** `/courier`
 
-| Tugma | Vazifasi |
-|-------|----------|
-| Zakaz kelib tushganda | Qabul qilish / Rad etish tugmalari chiqadi |
-| Qabul qilish | Yetkazish vaqtini tanlaydi va taymer boshlanadi |
-| ✅ Zakaz yetkazildi | Zakazni tugallangan deb belgilaydi |
-| `🍽 Tushlik / Dam olish` | Barcha kuryerlar bosganida 1 soatlik tanaffus |
+# | Tugma | Vazifasi |
+# |-------|----------|
+# | Zakaz kelib tushganda | Qabul qilish / Rad etish tugmalari chiqadi |
+# | Qabul qilish | Yetkazish vaqtini tanlaydi va taymer boshlanadi |
+# | ✅ Zakaz yetkazildi | Zakazni tugallangan deb belgilaydi |
+# | `🍽 Tushlik / Dam olish` | Barcha kuryerlar bosganida 1 soatlik tanaffus |
 
 ---
 

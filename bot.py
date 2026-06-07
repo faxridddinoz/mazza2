@@ -31,8 +31,8 @@ python bot.py
 ---
 
 ## Foydalanuvchi uchun buyruqlar
-| Buyruq | Vazifasi |
-|--------|----------|
+##| Buyruq | Vazifasi |
+##|--------|----------|
 | `/start` yoki `🚀 Boshlash` | Botni ishga tushirish |
 | `📦 Sizning zakazlaringiz` | Oxirgi zakaz va taymer |
 | `/menu` | Menyuni ko'rish |

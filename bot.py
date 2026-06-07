@@ -425,4 +425,7 @@ async def my_orders_handler(message: Message):
     elif order['status'] == 'completed' and order['completed_at']:
         text += f"🕐 Yetkazildi: {order['completed_at'][:16]}"
 
-await message.answer(text, parse_mode="HTML")
+
+async def xabar_yubor(message):
+    text = "Salom!"
+    await message.answer(text, parse_mode="HTML")

@@ -33,18 +33,18 @@ python bot.py
 ## Foydalanuvchi uchun buyruqlar
 ##| Buyruq | Vazifasi |
 ##|--------|----------|
-| `/start` yoki `🚀 Boshlash` | Botni ishga tushirish |
-| `📦 Sizning zakazlaringiz` | Oxirgi zakaz va taymer |
-| `/menu` | Menyuni ko'rish |
-| `/help` | Yordam |
-| `/myorders` | Oxirgi zakaz |
+##| `/start` yoki `🚀 Boshlash` | Botni ishga tushirish |
+##| `📦 Sizning zakazlaringiz` | Oxirgi zakaz va taymer |
+##| `/menu` | Menyuni ko'rish |
+##| `/help` | Yordam |
+##| `/myorders` | Oxirgi zakaz |
 
----
+##---
 
 ## Admin uchun
 **Admin panelga kirish:** `/admin`
 
-| Tugma | Vazifasi |
+##| Tugma | Vazifasi |
 |-------|----------|
 | `🍽 Menyu` | Menyu boshqaruvi (qo'shish/ko'rish/o'chirish) |
 | `👤 Admin qo'shish` | Yangi admin qo'shish (Telegram ID orqali) |

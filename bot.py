@@ -44,14 +44,14 @@ python bot.py
 ## Admin uchun
 **Admin panelga kirish:** `/admin`
 
-##| Tugma | Vazifasi |
-|-------|----------|
-| `🍽 Menyu` | Menyu boshqaruvi (qo'shish/ko'rish/o'chirish) |
-| `👤 Admin qo'shish` | Yangi admin qo'shish (Telegram ID orqali) |
-| `🚴 Dastavchi qo'shish` | Yangi kuryer qo'shish (Telegram ID orqali) |
-| `📢 Reklama kanali qo'shish` | Kanal qo'shish |
-| `📣 Reklama yuborish` | Barcha foydalanuvchilarga xabar |
-| `🚫 Zakaz bekor qilish` | Zakazni admin bekor qiladi |
+# ##| Tugma | Vazifasi |
+# |-------|----------|
+# | `🍽 Menyu` | Menyu boshqaruvi (qo'shish/ko'rish/o'chirish) |
+# | `👤 Admin qo'shish` | Yangi admin qo'shish (Telegram ID orqali) |
+# | `🚴 Dastavchi qo'shish` | Yangi kuryer qo'shish (Telegram ID orqali) |
+# | `📢 Reklama kanali qo'shish` | Kanal qo'shish |
+# | `📣 Reklama yuborish` | Barcha foydalanuvchilarga xabar |
+# | `🚫 Zakaz bekor qilish` | Zakazni admin bekor qiladi |
 
 ### Menyu kategoriyalari
 - Taom, Shirinlik, Ichimlik, Salat, Grill, Pizza, Burger, Sho'rva, Non, Set

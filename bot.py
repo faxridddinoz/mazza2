@@ -13,10 +13,10 @@ pip install -r requirements.txt
 ### 3. config.py ni sozlash
 `config.py` faylini oching va quyidagilarni to'ldiring:
 
-```python
+
 BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"   # @BotFather dan olingan token
 SUPER_ADMIN_ID = 123456789          # Sizning Telegram ID ingiz
-```
+
 
 **Telegram ID ni qanday bilish:**
 - @userinfobot ga `/start` yuboring

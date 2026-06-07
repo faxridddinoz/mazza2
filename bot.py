@@ -11,8 +11,6 @@ pip install -r requirements.txt
 ```
 
 ### 3. config.py ni sozlash
-`config.py` faylini oching va quyidagilarni to'ldiring:
-
 # `config.py` faylini oching va quyidagilarni to'ldiring:
 
 BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"   # @BotFather dan olingan token

@@ -17,8 +17,8 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 # =====================================================================
 # 1. SOZLAMALAR (CONFIG)
 # =====================================================================
-BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"   # Bu yerga @BotFather dan olingan tokenni yozing
-SUPER_ADMIN_ID = 123456789          # Bu yerga o'zingizning Telegram ID ingizni yozing
+BOT_TOKEN = "8749714916:AAFY3Vf_1NoFOSR5EhutHBNsq_Z0p-XH-GI"   # Bu yerga @BotFather dan olingan tokenni yozing
+SUPER_ADMIN_ID = 8684039353        # Bu yerga o'zingizning Telegram ID ingizni yozing
 DB_FILE = "food_bot.db"
 
 # Logging sozlamalari

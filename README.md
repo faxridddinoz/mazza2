@@ -39,10 +39,6 @@ class PromoFSM(StatesGroup):
 class CancelOrderFSM(StatesGroup):
     waiting = State()
 
-# ===== FILTER =====
-async def admin_filter(message: Message) -> bool:
-    return await db.is_admin(message.from_user.id)
-
 # ===== ADMIN PANEL =====
 @router.message(Command("admin"))
 async def admin_panel(message: Message):
@@ -61,9 +57,11 @@ async def admin_menu_btn(message: Message):
 @router.callback_query(F.data == "menu_add")
 async def menu_add_start(call: CallbackQuery, state: FSMContext):
     if not await db.is_admin(call.from_user.id):
+        await call.answer("Ruxsat yo'q.", show_alert=True)
         return
     await state.set_state(AddMenuFSM.name)
     await call.message.answer("📝 Taom nomini kiriting:", reply_markup=admin_cancel_keyboard())
+    await call.answer()
 
 @router.message(AddMenuFSM.name)
 async def menu_add_name(message: Message, state: FSMContext):
@@ -81,14 +79,14 @@ async def menu_add_photo(message: Message, state: FSMContext):
         await state.clear()
         await message.answer("❌ Bekor qilindi.", reply_markup=admin_main_keyboard())
         return
-
     photo_id = None
     if message.photo:
         photo_id = message.photo[-1].file_id
-    elif message.text and message.text.lower() != "skip":
+    elif message.text and message.text.lower() == "skip":
+        photo_id = None
+    else:
         await message.answer("⚠️ Rasm yuboring yoki 'skip' yozing.")
         return
-
     await state.update_data(photo_id=photo_id)
     await state.set_state(AddMenuFSM.price)
     await message.answer("💰 Narxini kiriting (so'mda, faqat raqam):")
@@ -121,8 +119,24 @@ async def menu_add_time(message: Message, state: FSMContext):
 
 @router.callback_query(F.data.startswith("newcat_"))
 async def menu_add_category(call: CallbackQuery, state: FSMContext):
+    # Faqat AddMenuFSM.category holatida ishlaydi
+    current_state = await state.get_state()
+    if current_state != AddMenuFSM.category:
+        await call.answer("Bu tugma hozir ishlamaydi.", show_alert=True)
+        return
+
+    if not await db.is_admin(call.from_user.id):
+        await call.answer("Ruxsat yo'q.", show_alert=True)
+        return
+
     category = call.data.replace("newcat_", "")
     data = await state.get_data()
+
+    # Majburiy maydonlarni tekshirish
+    if not data.get('name') or data.get('price') is None or data.get('delivery_time') is None:
+        await call.answer("Ma'lumotlar to'liq emas. Qaytadan boshlang.", show_alert=True)
+        await state.clear()
+        return
 
     await db.add_menu_item(
         name=data['name'],
@@ -140,11 +154,13 @@ async def menu_add_category(call: CallbackQuery, state: FSMContext):
         reply_markup=admin_main_keyboard(),
         parse_mode="HTML"
     )
+    await call.answer("✅ Qo'shildi!")
 
 # ===== VIEW MENU =====
 @router.callback_query(F.data == "menu_view")
 async def menu_view(call: CallbackQuery):
     if not await db.is_admin(call.from_user.id):
+        await call.answer("Ruxsat yo'q.", show_alert=True)
         return
     items = await db.get_menu_items()
     if not items:
@@ -154,22 +170,34 @@ async def menu_view(call: CallbackQuery):
     # Kategoriya bo'yicha guruhlash
     categories = {}
     for item in items:
-        cat = item['category']
-        categories.setdefault(cat, []).append(item)
+        categories.setdefault(item['category'], []).append(item)
 
+    # 4096 char limit uchun bo'lib yuborish
     text = "📋 <b>Menyu ro'yxati:</b>\n\n"
+    messages = []
     for cat, cat_items in categories.items():
-        text += f"<b>📂 {cat.upper()}</b>\n"
+        chunk = f"<b>📂 {cat.upper()}</b>\n"
         for item in cat_items:
-            text += f"  • {item['name']} — {item['price']:,} so'm ({item['delivery_time']} min)\n"
-        text += "\n"
+            chunk += f"  • {item['name']} — {item['price']:,} so'm ({item['delivery_time']} min)\n"
+        chunk += "\n"
+        if len(text) + len(chunk) > 4000:
+            messages.append(text)
+            text = chunk
+        else:
+            text += chunk
 
-    await call.message.answer(text, parse_mode="HTML")
+    if text.strip():
+        messages.append(text)
+
+    for msg in messages:
+        await call.message.answer(msg, parse_mode="HTML")
+    await call.answer()
 
 # ===== DELETE MENU =====
 @router.callback_query(F.data == "menu_delete")
 async def menu_delete_list(call: CallbackQuery):
     if not await db.is_admin(call.from_user.id):
+        await call.answer("Ruxsat yo'q.", show_alert=True)
         return
     items = await db.get_all_menu_items_admin()
     if not items:
@@ -187,7 +215,6 @@ async def delete_item_confirm(call: CallbackQuery):
     if not item:
         await call.answer("Topilmadi.", show_alert=True)
         return
-
     kb, word = confirm_delete_keyboard(item_id, item['category'])
     await call.message.edit_text(
         f"⚠️ Siz bu <b>{word}</b> o'chirmoqchimisiz?\n\n"
@@ -200,11 +227,15 @@ async def delete_item_confirm(call: CallbackQuery):
 async def confirm_delete(call: CallbackQuery):
     item_id = int(call.data.replace("confirm_del_", ""))
     item = await db.get_menu_item(item_id)
+    if not item:
+        await call.answer("Topilmadi.", show_alert=True)
+        return
     await db.delete_menu_item(item_id)
     await call.message.edit_text(
         f"✅ <b>{item['name']}</b> menyudan o'chirildi.",
         parse_mode="HTML"
     )
+    await call.answer("O'chirildi!")
 
 # ===== ADD ADMIN =====
 @router.message(F.text == "👤 Admin qo'shish")
@@ -214,7 +245,7 @@ async def add_admin_start(message: Message, state: FSMContext):
     await state.set_state(AddAdminFSM.waiting)
     await message.answer(
         "👤 Yangi admin qo'shish uchun uning Telegram ID sini kiriting\n"
-        "(Foydalanuvchi @userinfobot ga /start yuborsа ID sini oladi):",
+        "(@userinfobot ga /start yuboring — ID sini oladi):",
         reply_markup=admin_cancel_keyboard()
     )
 
@@ -227,18 +258,18 @@ async def add_admin_process(message: Message, state: FSMContext, bot: Bot):
     if not message.text.lstrip('-').isdigit():
         await message.answer("⚠️ Faqat raqam (Telegram ID) kiriting!")
         return
-    new_admin_id = int(message.text)
+    new_id = int(message.text)
     try:
-        user_info = await bot.get_chat(new_admin_id)
+        user_info = await bot.get_chat(new_id)
         full_name = user_info.full_name
         username = user_info.username or ""
-    except:
+    except Exception:
         full_name = "Noma'lum"
         username = ""
-    await db.add_admin(new_admin_id, username, full_name)
+    await db.add_admin(new_id, username, full_name)
     await state.clear()
     await message.answer(
-        f"✅ <b>{full_name}</b> (ID: {new_admin_id}) admin sifatida qo'shildi!",
+        f"✅ <b>{full_name}</b> (ID: {new_id}) admin sifatida qo'shildi!",
         reply_markup=admin_main_keyboard(),
         parse_mode="HTML"
     )
@@ -263,18 +294,18 @@ async def add_courier_process(message: Message, state: FSMContext, bot: Bot):
     if not message.text.lstrip('-').isdigit():
         await message.answer("⚠️ Faqat raqam (Telegram ID) kiriting!")
         return
-    courier_id = int(message.text)
+    cid = int(message.text)
     try:
-        user_info = await bot.get_chat(courier_id)
+        user_info = await bot.get_chat(cid)
         full_name = user_info.full_name
         username = user_info.username or ""
-    except:
+    except Exception:
         full_name = "Noma'lum"
         username = ""
-    await db.add_courier(courier_id, username, full_name)
+    await db.add_courier(cid, username, full_name)
     await state.clear()
     await message.answer(
-        f"✅ <b>{full_name}</b> (ID: {courier_id}) dastavchi sifatida qo'shildi!\n"
+        f"✅ <b>{full_name}</b> (ID: {cid}) dastavchi sifatida qo'shildi!\n"
         "Endi u /courier buyrug'i orqali paneliga kira oladi.",
         reply_markup=admin_main_keyboard(),
         parse_mode="HTML"
@@ -310,7 +341,10 @@ async def add_channel_process(message: Message, state: FSMContext, bot: Bot):
             parse_mode="HTML"
         )
     except Exception as e:
-        await message.answer(f"❌ Xatolik: {e}\nKanal ID ni tekshiring va botni admin qilib qo'shing.")
+        await message.answer(
+            f"❌ Xatolik: {e}\n"
+            "Kanal ID ni tekshiring va botni kanalga admin qilib qo'shing."
+        )
 
 # ===== PROMO SEND =====
 @router.message(F.text == "📣 Reklama yuborish")
@@ -320,7 +354,8 @@ async def promo_send_start(message: Message, state: FSMContext):
     await state.set_state(PromoFSM.media)
     await message.answer(
         "📣 Reklama yuborish\n\n"
-        "1️⃣ Avval rasm yoki video yuboring (faqat matn bo'lsa 'skip' yozing):",
+        "1️⃣ Avval rasm yoki video yuboring\n"
+        "(faqat matn bo'lsa 'skip' yozing):",
         reply_markup=promo_cancel_keyboard()
     )
 
@@ -330,10 +365,8 @@ async def promo_get_media(message: Message, state: FSMContext):
         await state.clear()
         await message.answer("❌ Bekor qilindi.", reply_markup=admin_main_keyboard())
         return
-
     media_type = None
     media_id = None
-
     if message.photo:
         media_type = "photo"
         media_id = message.photo[-1].file_id
@@ -345,7 +378,6 @@ async def promo_get_media(message: Message, state: FSMContext):
     else:
         await message.answer("⚠️ Rasm, video yuboring yoki 'skip' yozing.")
         return
-
     await state.update_data(media_type=media_type, media_id=media_id)
     await state.set_state(PromoFSM.caption)
     await message.answer("2️⃣ Endi reklama matnini kiriting:")
@@ -356,24 +388,18 @@ async def promo_send(message: Message, state: FSMContext, bot: Bot):
         await state.clear()
         await message.answer("❌ Bekor qilindi.", reply_markup=admin_main_keyboard())
         return
-
     data = await state.get_data()
     caption = message.text
     media_type = data.get('media_type')
     media_id = data.get('media_id')
 
-    # Barcha foydalanuvchilarga yuborish
     user_ids = await db.get_all_user_ids()
     channels = await db.get_promo_channels()
+    targets = list(user_ids) + [ch['channel_id'] for ch in channels]
 
     sent = 0
     failed = 0
-
-    all_targets = [uid for uid in user_ids]
-    for ch in channels:
-        all_targets.append(ch['channel_id'])
-
-    for target in all_targets:
+    for target in targets:
         try:
             if media_type == "photo":
                 await bot.send_photo(target, media_id, caption=caption)
@@ -382,7 +408,8 @@ async def promo_send(message: Message, state: FSMContext, bot: Bot):
             else:
                 await bot.send_message(target, caption)
             sent += 1
-        except:
+        except Exception as e:
+            logger.error(f"Reklama {target} ga ketmadi: {e}")
             failed += 1
 
     await state.clear()
@@ -401,11 +428,9 @@ async def cancel_order_admin_start(message: Message, state: FSMContext):
     if not orders:
         await message.answer("📭 Kutilayotgan zakazlar yo'q.")
         return
-
     text = "🚫 Qaysi zakazni bekor qilmoqchisiz? ID kiriting:\n\n"
-    for order in orders:
-        text += f"#{order['id']} — {order['user_name']} | {order['phone']}\n"
-
+    for order_row in orders:
+        text += f"#{order_row['id']} — {order_row['user_name']} | {order_row['phone']}\n"
     await state.set_state(CancelOrderFSM.waiting)
     await message.answer(text, reply_markup=admin_cancel_keyboard())
 
@@ -418,22 +443,19 @@ async def cancel_order_admin_process(message: Message, state: FSMContext, bot: B
     if not message.text.isdigit():
         await message.answer("⚠️ Zakaz ID sini kiriting (faqat raqam):")
         return
-
     order_id = int(message.text)
-    order = await db.get_order(order_id)
-    if not order:
+    order_row = await db.get_order(order_id)
+    if not order_row:
         await message.answer("❌ Zakaz topilmadi.")
         return
-
     await db.reject_order(order_id)
     await state.clear()
     await message.answer(f"✅ Zakaz #{order_id} bekor qilindi.", reply_markup=admin_main_keyboard())
-
     try:
         await bot.send_message(
-            order['user_id'],
+            order_row['user_id'],
             f"❌ Afsuski, #{order_id} zakazingiz admin tomonidan bekor qilindi.\n"
             "Muammo bo'lsa admin bilan bog'laning."
         )
-    except:
-        pass
+    except Exception as e:
+        logger.error(f"Bekor xabari mijozga ketmadi: {e}")
